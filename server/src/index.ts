@@ -104,20 +104,47 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   })
 })
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║   🏡 CampoApp API Server                                 ║
-║                                                           ║
-║   ✅ Servidor corriendo en el puerto ${PORT}                 ║
-║   🌐 URL: http://localhost:${PORT}                          ║
-║   📡 API:   http://localhost:${PORT}/api                     ║
-║   💚 Health: http://localhost:${PORT}/api/health             ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝
-  `)
-})
+// Exportar para Vercel
+module.exports = app
 
-export default app
+// Handler de Vercel
+export default async function (req: any, res: any) {
+  // Responder directamente para health check
+  if (req.url === '/api/health') {
+    return res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'CampoApp API',
+      version: '1.0.0',
+    })
+  }
+  
+  // Para otras rutas, usar Express
+  return new Promise((resolve, reject) => {
+    app(req, res, (err: any) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(undefined)
+      }
+    })
+  })
+}
+
+// Solo iniciar el servidor si no estamos en Vercel
+if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`
+  ╔═══════════════════════════════════════════════════════════╗
+  ║                                                           ║
+  ║   🏡 CampoApp API Server                                 ║
+  ║                                                           ║
+  ║   ✅ Servidor corriendo en el puerto ${PORT}                 ║
+  ║   🌐 URL: http://localhost:${PORT}                          ║
+  ║   📡 API:   http://localhost:${PORT}/api                     ║
+  ║   💚 Health: http://localhost:${PORT}/api/health             ║
+  ║                                                           ║
+  ╚═══════════════════════════════════════════════════════════╝
+    `)
+  })
+}

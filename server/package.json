@@ -5,9 +5,11 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
+    "build": "npx tsc",
     "start": "npm run build && node dist/index.js",
-    "db:init": "ts-node src/db/init.ts"
+    "db:init": "ts-node src/db/init.ts",
+    "vercel-build": "npx tsc",
+    "now-build": "npx tsc"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
@@ -33,5 +35,12 @@
     "@types/uuid": "^9.0.7",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "@supabase/auth-js": "2.65.0",
+    "@supabase/functions-js": "2.4.0",
+    "@supabase/postgrest-js": "1.15.0",
+    "@supabase/realtime-js": "2.9.0",
+    "@supabase/storage-js": "2.6.0"
   }
 }
