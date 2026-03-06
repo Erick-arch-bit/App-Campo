@@ -5,11 +5,13 @@ export interface Usuario {
   id_usuario:                    number
   nombre_completo:               string
   email:                         string
-  rol:                           string
+  codigo_acceso:                string  // Código de acceso de 5 dígitos (v2.0)
+  rol:                           'SUPER_ADMIN' | 'COORDINADOR' | 'TECNICO'
   especialidad:                  'AGRICOLA' | 'AGROPECUARIO' | 'ACTIVIDAD_GENERAL' | null
   puede_registrar_beneficiarios: boolean
   bloqueado_revision:            boolean
   zona_nombre:                   string | null
+  foto_perfil_url:               string | null
 }
 
 // ── Asignaciones ──────────────────────────────────────────────────────

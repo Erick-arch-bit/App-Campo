@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native'
+import { View, Text, StyleSheet, Animated, Easing, Image } from 'react-native'
 import { useRouter } from 'expo-router'
 import Constants from 'expo-constants'
 import { Colors } from '@/constants/Colors'
-import { Ionicons } from '@expo/vector-icons'
+
+// Importar logo desde assets
+const LOGO_CAMPO = require('../../assets/logos/Logo-campo 2.svg')
 
 export default function SplashScreen() {
   const router = useRouter()
@@ -46,9 +48,12 @@ export default function SplashScreen() {
           },
         ]}
       >
-        <View style={styles.iconCircle}>
-          <Ionicons name="leaf" size={80} color={Colors.dorado} />
-        </View>
+        {/* Logo de SADERH Campo */}
+        <Image 
+          source={require('../../assets/logos/Logo-campo 2.svg') as any}
+          style={styles.logoSaderh}
+          resizeMode="contain"
+        />
         
         <Text style={styles.subtitulo}>Gobierno del Estado de Hidalgo</Text>
         <Text style={styles.titulo}>SADERH</Text>
@@ -80,6 +85,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
+  },
+
+  logoSaderh: {
+    width: 200,
+    height: 200,
+    marginBottom: 10,
   },
 
   iconCircle: {

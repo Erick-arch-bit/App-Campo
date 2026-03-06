@@ -8,7 +8,7 @@ interface AuthStore {
   token:        string | null
   cargando:     boolean
   error:        string | null
-  login:        (email: string, password: string) => Promise<void>
+  login:        (codigoAcceso: string) => Promise<void>
   logout:       () => Promise<void>
   cargarSesion: () => Promise<void>
   limpiarAuth:  () => void
@@ -29,17 +29,16 @@ export const useAuth = create<AuthStore>((set) => ({
       }
     } catch (err) {
       console.error('Error cargando sesión:', err)
-      // Si hay error parseando, limpiar datos corruptos
       await SecureStore.deleteItemAsync('auth_token')
       await SecureStore.deleteItemAsync('user_data')
       set({ token: null, usuario: null })
     }
   },
 
-  login: async (email, password) => {
+  login: async (codigoAcceso) => {
     set({ cargando: true, error: null })
     try {
-      const { data } = await AuthAPI.login(email, password)
+      const { data } = await AuthAPI.login(codigoAcceso)
       const { token, user } = data.data
 
       await SecureStore.setItemAsync('auth_token', token)
@@ -48,7 +47,6 @@ export const useAuth = create<AuthStore>((set) => ({
       set({ token, usuario: user, cargando: false })
 
       // Precargar datos en segundo plano después del login
-      // No esperar a que termine para no bloquear la navegación
       try {
         const { usePreload } = await import('./usePreload')
         usePreload.getState().precargarDatos()
@@ -56,7 +54,7 @@ export const useAuth = create<AuthStore>((set) => ({
         console.log('Precarga en segundo plano iniciada')
       }
     } catch (err: any) {
-      const msg = err.response?.data?.error ?? 'Error de conexión'
+      const msg = err.response?.data?.message ?? err.response?.data?.error ?? 'Error de conexión'
       set({ error: msg, cargando: false })
     }
   },
@@ -75,7 +73,6 @@ export const useAuth = create<AuthStore>((set) => ({
     }
   },
 
-  // Método para limpiar auth desde el interceptor 401 sin efectos secundarios async
   limpiarAuth: () => {
     set({ usuario: null, token: null })
   },

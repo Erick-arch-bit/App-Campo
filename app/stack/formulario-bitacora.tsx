@@ -17,13 +17,15 @@ const TIPOS_ACTIVIDAD = [
 export default function FormularioBitacoraScreen() {
   const router    = useRouter()
   const params    = useLocalSearchParams()
-  const { setDatos, agregarImagen, quitarImagen, imagenes, reporte } = useBitacora()
+  const { setDatos, agregarImagen, actualizarComentario, quitarImagen, imagenes, reporte } = useBitacora()
 
   const [tipoActividad,  setTipoActividad]  = useState('')
   const [observaciones,  setObservaciones]  = useState(reporte)
   const [hectareas,      setHectareas]      = useState('')
   const [productos,      setProductos]      = useState('')
   const [subiendo,       setSubiendo]       = useState(false)
+  // Estado para manejar el comentario de cada imagen
+  const [comentarios, setComentarios] = useState<Record<string, string>>({})
 
   const seleccionarImagen = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -155,15 +157,26 @@ export default function FormularioBitacoraScreen() {
         {/* Grid de imágenes seleccionadas */}
         {imagenes.length > 0 && (
           <View style={styles.imagenesGrid}>
-            {imagenes.map((uri: string, i: number) => (
+            {imagenes.map((img: { uri: string; comentario: string }, i: number) => (
               <View key={i} style={styles.imagenWrapper}>
-                <Image source={{ uri }} style={styles.imagenPreview} />
+                <Image source={{ uri: img.uri }} style={styles.imagenPreview} />
                 <TouchableOpacity
                   style={styles.imagenEliminar}
-                  onPress={() => quitarImagen(uri)}
+                  onPress={() => quitarImagen(img.uri)}
                 >
                   <Ionicons name="close-circle" size={22} color={Colors.danger} />
                 </TouchableOpacity>
+                {/* Campo de comentario para cada imagen */}
+                <TextInput
+                  style={styles.comentarioInput}
+                  placeholder="Agregar comentario..."
+                  placeholderTextColor={Colors.textoPlaceholder}
+                  value={comentarios[img.uri] || ''}
+                  onChangeText={(text) => {
+                    setComentarios(prev => ({ ...prev, [img.uri]: text }))
+                    actualizarComentario(img.uri, text)
+                  }}
+                />
               </View>
             ))}
           </View>
@@ -227,11 +240,21 @@ const styles = StyleSheet.create({
   btnImagenTexto:{ color: Colors.guinda, fontWeight: '600', fontSize: 14 },
 
   imagenesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  imagenWrapper:{ position: 'relative' },
-  imagenPreview:{ width: 90, height: 90, borderRadius: 10 },
+  imagenWrapper:{ position: 'relative', width: '48%' },
+  imagenPreview:{ width: '100%', height: 90, borderRadius: 10 },
   imagenEliminar:{
     position: 'absolute', top: -6, right: -6,
     backgroundColor: Colors.blanco, borderRadius: 12,
+  },
+  comentarioInput: {
+    marginTop: 4,
+    padding: 8,
+    fontSize: 12,
+    color: Colors.textoMain,
+    backgroundColor: Colors.blanco,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.borde,
   },
 
   botonContinuar:{

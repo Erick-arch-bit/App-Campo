@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, ActivityIndicator,
-  TouchableOpacity, Animated,
+  TouchableOpacity, Animated, Image,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -149,6 +149,15 @@ export default function ConexionScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.contenido}>
+        {/* Logo UTMSH */}
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('../../assets/logos/utmir.jpeg')}
+            style={styles.logoUtmsh}
+            resizeMode="contain"
+          />
+        </View>
+
         {/* Ícono de estado */}
         <View style={styles.iconoContainer}>
           {renderIcono()}
@@ -217,6 +226,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 32,
     gap: 24,
+  },
+
+  logoContainer: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+
+  logoUtmsh: {
+    width: 180,
+    height: 100,
+    borderRadius: 10,
   },
 
   iconoContainer: {

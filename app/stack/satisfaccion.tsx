@@ -68,12 +68,13 @@ export default function SatisfaccionScreen() {
 
       const id_bitacora = data.data.id_bitacora
 
-      // Subir imágenes a Cloudinary
-      for (const uri of currentState.imagenes) {
+      // Subir imágenes a Cloudinary con comentarios
+      for (const img of currentState.imagenes) {
         const formData = new FormData()
         formData.append('id_bitacora', String(id_bitacora))
         formData.append('tipo_archivo', 'FOTO')
-        formData.append('archivo', { uri, name: 'evidencia.jpg', type: 'image/jpeg' } as any)
+        formData.append('descripcion', img.comentario || 'Evidencia de visita')
+        formData.append('archivo', { uri: img.uri, name: 'evidencia.jpg', type: 'image/jpeg' } as any)
         await EvidenciasAPI.subir(formData)
       }
 

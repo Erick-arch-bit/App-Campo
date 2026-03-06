@@ -2,6 +2,12 @@ import { create } from 'zustand'
 import * as Crypto from 'expo-crypto'
 import type { TipoBitacora } from '@/types/models'
 
+// Interfaz para imagen con comentario
+interface ImagenEvidencia {
+  uri: string
+  comentario: string
+}
+
 interface BitacoraStore {
   // Datos de la bitácora activa
   uuid_movil:         string | null
@@ -15,17 +21,18 @@ interface BitacoraStore {
   longitud_fin:       number | null
   // Formulario
   datos_extendidos:   Record<string, any>
-  imagenes:           string[]             // URIs locales
+  imagenes:           ImagenEvidencia[]   // URIs locales con comentarios
   reporte:            string
   calificacion:       number               // 1-5 estrellas
   firma_url:          string | null        // URL Cloudinary
-  foto_confirmacion:  string | null        // URL Cloudinary
+  foto_confirmacion:  string | null        // URL Cloudinary - selfie del beneficiario
 
   // Acciones
   iniciarBitacora:    (id_asignacion: number | null, tipo: TipoBitacora, lat: number, lng: number) => void
   finalizarBitacora:  (lat: number, lng: number) => void
   setDatos:           (datos: Partial<BitacoraStore>) => void
-  agregarImagen:      (uri: string) => void
+  agregarImagen:      (uri: string, comentario?: string) => void
+  actualizarComentario: (uri: string, comentario: string) => void
   quitarImagen:       (uri: string) => void
   reset:              () => void
 }
@@ -41,7 +48,7 @@ const estadoInicial = {
   latitud_fin:       null as number | null,
   longitud_fin:      null as number | null,
   datos_extendidos:  {} as Record<string, any>,
-  imagenes:          [] as string[],
+  imagenes:          [] as ImagenEvidencia[],
   reporte:           '',
   calificacion:      0,
   firma_url:         null as string | null,
@@ -68,11 +75,18 @@ export const useBitacora = create<BitacoraStore>((set, get) => ({
 
   setDatos: (datos) => set((state) => ({ ...state, ...datos })),
 
-  agregarImagen: (uri) =>
-    set((state) => ({ imagenes: [...state.imagenes, uri] })),
+  agregarImagen: (uri, comentario = '') =>
+    set((state) => ({ imagenes: [...state.imagenes, { uri, comentario }] })),
+
+  actualizarComentario: (uri, comentario) =>
+    set((state) => ({
+      imagenes: state.imagenes.map(img => 
+        img.uri === uri ? { ...img, comentario } : img
+      )
+    })),
 
   quitarImagen: (uri) =>
-    set((state) => ({ imagenes: state.imagenes.filter(i => i !== uri) })),
+    set((state) => ({ imagenes: state.imagenes.filter(i => i.uri !== uri) })),
 
   reset: () => set(estadoInicial),
 }))

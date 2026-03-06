@@ -55,8 +55,8 @@ api.interceptors.response.use(
 // ── Funciones de la API ───────────────────────────────────────────────
 
 export const AuthAPI = {
-  login: (email: string, password: string) =>
-    api.post<ApiResponse<LoginResponse>>('/api/auth/login', { email, password, source: 'app' }),
+  login: (codigoAcceso: string) =>
+    api.post<ApiResponse<LoginResponse>>('/api/auth/login', { codigo_acceso: codigoAcceso, source: 'app' }),
 }
 
 export const PerfilAPI = {

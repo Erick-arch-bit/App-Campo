@@ -12,15 +12,19 @@ import { Ionicons } from '@expo/vector-icons'
 export default function LoginScreen() {
   const { login, cargando, error } = useAuth()
   const { cargando: descargandoDatos } = usePreload()
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
+  const [codigoAcceso, setCodigoAcceso] = useState('')
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Campos requeridos', 'Ingresa tu email y contraseña')
+    if (!codigoAcceso) {
+      Alert.alert('Campo requerido', 'Ingresa tu código de acceso')
       return
     }
-    await login(email.trim().toLowerCase(), password)
+    // El código debe ser de 5 dígitos
+    if (codigoAcceso.length !== 5) {
+      Alert.alert('Código inválido', 'El código debe tener 5 dígitos')
+      return
+    }
+    await login(codigoAcceso.trim())
   }
 
   return (
@@ -39,33 +43,20 @@ export default function LoginScreen() {
       <View style={styles.form}>
         <Text style={styles.bienvenida}>Iniciar Sesión</Text>
         <Text style={styles.instruccion}>
-          Acceso exclusivo para técnicos de campo
+          Ingresa tu código de acceso de 5 dígitos
         </Text>
 
-        {/* Email */}
+        {/* Código de acceso */}
         <View style={styles.inputWrapper}>
-          <Text style={styles.label}>Correo electrónico</Text>
+          <Text style={styles.label}>Código de Acceso</Text>
           <TextInput
             style={styles.input}
-            placeholder="tecnico@saderh.gob.mx"
+            placeholder="12345"
             placeholderTextColor={Colors.textoPlaceholder}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
-        </View>
-
-        {/* Contraseña */}
-        <View style={styles.inputWrapper}>
-          <Text style={styles.label}>Contraseña</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={Colors.textoPlaceholder}
-            value={password}
-            onChangeText={setPassword}
+            value={codigoAcceso}
+            onChangeText={(text) => setCodigoAcceso(text.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            maxLength={5}
             secureTextEntry
           />
         </View>
