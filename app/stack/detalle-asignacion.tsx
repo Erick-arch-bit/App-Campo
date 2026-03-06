@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import MapView, { Marker } from 'react-native-maps'
 import * as Location from 'expo-location'
@@ -138,15 +138,25 @@ export default function DetalleAsignacionScreen() {
           </View>
         </View>
 
-        {/* Mapa */}
+        {/* Mapa - Solo en plataformas nativas */}
         <Text style={styles.mapaLabel}>Ubicación del predio</Text>
         <View style={styles.mapaContainer}>
-          <MapView
-            style={styles.mapa}
-            initialRegion={{ ...coordsMapa, latitudeDelta: 0.01, longitudeDelta: 0.01 }}
-          >
-            <Marker coordinate={coordsMapa} title={item.beneficiario_nombre ?? 'Ubicación'} />
-          </MapView>
+          {Platform.OS !== 'web' ? (
+            <MapView
+              style={styles.mapa}
+              initialRegion={{ ...coordsMapa, latitudeDelta: 0.01, longitudeDelta: 0.01 }}
+            >
+              <Marker coordinate={coordsMapa} title={item.beneficiario_nombre ?? 'Ubicación'} />
+            </MapView>
+          ) : (
+            <View style={styles.mapaWeb}>
+              <Ionicons name="map-outline" size={48} color={Colors.guinda} />
+              <Text style={styles.mapaWebTexto}>El mapa está disponible en la app móvil</Text>
+              <Text style={styles.mapaWebCoords}>
+                Lat: {coordsMapa.latitude.toFixed(6)}, Lng: {coordsMapa.longitude.toFixed(6)}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Espacio para el botón fijo */}
@@ -214,6 +224,12 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.borde, height: 220,
   },
   mapa:          { flex: 1 },
+  mapaWeb:       {
+    flex: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: Colors.fondoApp, gap: 8, padding: 20,
+  },
+  mapaWebTexto:  { fontSize: 14, color: Colors.textoSecundario, textAlign: 'center' },
+  mapaWebCoords: { fontSize: 12, color: Colors.textoSecundario, fontFamily: Platform.OS === 'web' ? 'monospace' : undefined },
 
   botonContainer:{
     position: 'absolute', bottom: 0, left: 0, right: 0,

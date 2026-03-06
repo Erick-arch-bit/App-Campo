@@ -8,7 +8,7 @@
     "build": "npx tsc",
     "start": "npm run build && node dist/index.js",
     "db:init": "ts-node src/db/init.ts",
-    "vercel-build": "npx tsc",
+    
     "now-build": "npx tsc"
   },
   "dependencies": {

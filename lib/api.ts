@@ -1,5 +1,7 @@
 import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
+import Constants from 'expo-constants'
+import { Platform } from 'react-native'
 import type {
   CrearBeneficiarioPayload,
   CrearBitacoraPayload,
@@ -10,13 +12,54 @@ import type {
   BitacoraCreatedResponse,
 } from '@/types/models'
 
-// URL del API - DEBE configurarse en .env
-// @ts-ignore - Expo defines process.env.EXPO_PUBLIC_* at runtime
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL
+const DEFAULT_API_PORT = '3001'
 
-if (!BASE_URL) {
-  console.error('CRITICAL: EXPO_PUBLIC_API_URL no está configurada en el archivo .env')
+const normalizeApiUrl = (url: string) => {
+  // Android emulator cannot access localhost of the host machine directly.
+  if (Platform.OS === 'android' && /localhost|127\.0\.0\.1/.test(url)) {
+    return url.replace(/localhost|127\.0\.0\.1/g, '10.0.2.2')
+  }
+  return url
 }
+
+const getDevHostFromExpo = () => {
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants.manifest2 as any)?.extra?.expoGo?.debuggerHost ||
+    (Constants.manifest as any)?.debuggerHost
+
+  if (!hostUri) return undefined
+  return hostUri.split(':')[0]
+}
+
+const buildFallbackBaseUrl = () => {
+  if (__DEV__) {
+    const expoHost = getDevHostFromExpo()
+    if (expoHost) return `http://${expoHost}:${DEFAULT_API_PORT}`
+
+    if (Platform.OS === 'android') return `http://10.0.2.2:${DEFAULT_API_PORT}`
+    return `http://localhost:${DEFAULT_API_PORT}`
+  }
+
+  return undefined
+}
+
+const resolveBaseUrl = () => {
+  // @ts-ignore - Expo injects EXPO_PUBLIC_* at runtime
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim()
+  if (envUrl) return normalizeApiUrl(envUrl)
+
+  const fallback = buildFallbackBaseUrl()
+  if (fallback) {
+    console.warn(`EXPO_PUBLIC_API_URL no configurada. Usando fallback: ${fallback}`)
+    return fallback
+  }
+
+  console.error('CRITICAL: EXPO_PUBLIC_API_URL no está configurada en el archivo .env')
+  return ''
+}
+
+const BASE_URL = resolveBaseUrl()
 
 export const api = axios.create({
   baseURL: BASE_URL,
