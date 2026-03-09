@@ -3,6 +3,7 @@
     "name": "CampoApp",
     "slug": "CampoApp",
     "version": "1.0.0",
+    "scheme": "campoapp",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

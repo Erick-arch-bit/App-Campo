@@ -1,7 +1,13 @@
 import { create } from 'zustand'
 import * as SecureStore from 'expo-secure-store'
 import { AuthAPI } from '@/lib/api'
-import type { Usuario } from '@/types/models'
+
+interface Usuario {
+  id_usuario: number
+  nombre_completo: string
+  email: string
+  rol: string
+}
 
 interface AuthStore {
   usuario:      Usuario | null
@@ -38,23 +44,32 @@ export const useAuth = create<AuthStore>((set) => ({
   login: async (codigoAcceso) => {
     set({ cargando: true, error: null })
     try {
-      const { data } = await AuthAPI.login(codigoAcceso)
-      const { token, user } = data.data
+      const response = await AuthAPI.login(codigoAcceso)
+      const data = response.data
 
-      await SecureStore.setItemAsync('auth_token', token)
-      await SecureStore.setItemAsync('user_data', JSON.stringify(user))
+      // La respuesta ahora tiene: success, rol, user, token
+      if (data.success) {
+        const user = data.user
+        const token = data.token || ''
 
-      set({ token, usuario: user, cargando: false })
+        await SecureStore.setItemAsync('auth_token', token)
+        await SecureStore.setItemAsync('user_data', JSON.stringify(user))
 
-      // Precargar datos en segundo plano después del login
-      try {
-        const { usePreload } = await import('./usePreload')
-        usePreload.getState().precargarDatos()
-      } catch (preloadErr) {
-        console.log('Precarga en segundo plano iniciada')
+        set({ token, usuario: user, cargando: false })
+
+        // Precargar datos en segundo plano
+        try {
+          const { usePreload } = await import('./usePreload')
+          usePreload.getState().precargarDatos()
+        } catch (preloadErr) {
+          console.log('Precarga iniciada')
+        }
+      } else {
+        set({ error: 'Credenciales inválidas', cargando: false })
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message ?? err.response?.data?.error ?? 'Error de conexión'
+      console.error('Error login:', err)
+      const msg = err.response?.data?.message ?? err.response?.data?.error ?? err.message ?? 'Error de conexión'
       set({ error: msg, cargando: false })
     }
   },
@@ -64,7 +79,6 @@ export const useAuth = create<AuthStore>((set) => ({
     await SecureStore.deleteItemAsync('user_data')
     set({ usuario: null, token: null })
 
-    // Limpiar cache de datos al cerrar sesión
     try {
       const { usePreload } = await import('./usePreload')
       await usePreload.getState().limpiarCache()

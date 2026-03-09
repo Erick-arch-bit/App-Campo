@@ -1,27 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
-  Image, ActivityIndicator, Alert,
+  ActivityIndicator, Alert,
 } from 'react-native'
 import { Colors } from '@/constants/Colors'
 import { useAuth } from '@/hooks/useAuth'
-import { usePreload } from '@/hooks/usePreload'
 import { Ionicons } from '@expo/vector-icons'
 
 export default function LoginScreen() {
   const { login, cargando, error } = useAuth()
-  const { cargando: descargandoDatos } = usePreload()
   const [codigoAcceso, setCodigoAcceso] = useState('')
 
   const handleLogin = async () => {
-    if (!codigoAcceso) {
-      Alert.alert('Campo requerido', 'Ingresa tu código de acceso')
-      return
-    }
-    // El código debe ser de 5 dígitos
-    if (codigoAcceso.length !== 5) {
-      Alert.alert('Código inválido', 'El código debe tener 5 dígitos')
+    if (!codigoAcceso || codigoAcceso.length !== 5) {
+      Alert.alert('Código requerido', 'Ingresa tu código de acceso de 5 dígitos')
       return
     }
     await login(codigoAcceso.trim())
@@ -32,7 +25,7 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Header guinda institucional */}
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.subtitulo}>Gobierno del Estado de Hidalgo</Text>
         <Text style={styles.titulo}>SADERH</Text>
@@ -42,16 +35,13 @@ export default function LoginScreen() {
       {/* Formulario */}
       <View style={styles.form}>
         <Text style={styles.bienvenida}>Iniciar Sesión</Text>
-        <Text style={styles.instruccion}>
-          Ingresa tu código de acceso de 5 dígitos
-        </Text>
+        <Text style={styles.instruccion}>Ingresa tu código de acceso</Text>
 
         {/* Código de acceso */}
         <View style={styles.inputWrapper}>
-          <Text style={styles.label}>Código de Acceso</Text>
           <TextInput
             style={styles.input}
-            placeholder="12345"
+            placeholder="Código de acceso"
             placeholderTextColor={Colors.textoPlaceholder}
             value={codigoAcceso}
             onChangeText={(text) => setCodigoAcceso(text.replace(/[^0-9]/g, ''))}
@@ -64,7 +54,8 @@ export default function LoginScreen() {
         {/* Error */}
         {error && (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>⚠️ {error}</Text>
+            <Ionicons name="warning" size={16} color={Colors.danger} />
+            <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
 
@@ -80,21 +71,11 @@ export default function LoginScreen() {
             : <Text style={styles.botonTexto}>Entrar</Text>
           }
         </TouchableOpacity>
-
-        {/* Indicador de descarga de datos */}
-        {descargandoDatos && (
-          <View style={styles.descargaContainer}>
-            <Ionicons name="cloud-download-outline" size={16} color={Colors.info} />
-            <Text style={styles.descargaTexto}>Descargando tus asignaciones...</Text>
-          </View>
-        )}
       </View>
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerTexto}>
-          Secretaría de Agricultura de Hidalgo
-        </Text>
+        <Text style={styles.footerTexto}>Secretaría de Agricultura de Hidalgo</Text>
       </View>
     </KeyboardAvoidingView>
   )
@@ -124,19 +105,19 @@ const styles = StyleSheet.create({
   instruccion:  { fontSize: 13, color: Colors.textoSecundario, marginBottom: 28 },
 
   inputWrapper: { marginBottom: 18 },
-  label:        { fontSize: 13, fontWeight: '600', color: Colors.textoMain, marginBottom: 6 },
   input:        {
     borderWidth: 1.5, borderColor: Colors.borde,
     borderRadius: 10, padding: 14,
-    fontSize: 15, color: Colors.textoMain,
-    backgroundColor: Colors.fondoApp,
+    fontSize: 18, color: Colors.textoMain, textAlign: 'center',
+    backgroundColor: Colors.fondoApp, letterSpacing: 8,
   },
 
   errorBox:     {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: Colors.dangerBg, borderRadius: 8,
     padding: 12, marginBottom: 16,
   },
-  errorText:    { color: Colors.danger, fontSize: 13 },
+  errorText:    { color: Colors.danger, fontSize: 13, flex: 1 },
 
   botonLogin:   {
     backgroundColor: Colors.guinda, borderRadius: 12,
@@ -144,22 +125,6 @@ const styles = StyleSheet.create({
   },
   botonDisabled:{ opacity: 0.6 },
   botonTexto:   { color: Colors.blanco, fontSize: 16, fontWeight: '700' },
-
-  descargaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: Colors.infoBg,
-    borderRadius: 8,
-  },
-  descargaTexto: {
-    color: Colors.info,
-    fontSize: 13,
-    fontWeight: '600',
-  },
 
   footer:       {
     flex: 0.1, backgroundColor: Colors.blanco,
