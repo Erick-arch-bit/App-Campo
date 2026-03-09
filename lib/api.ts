@@ -6,8 +6,8 @@
 import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
 
-// Base URL - Vercel API
-const BASE_URL = 'https://web-campo.vercel.app/api'
+// Base URL - Vercel
+const BASE_URL = 'https://web-campo.vercel.app'
 
 // Create axios instance
 export const api = axios.create({
@@ -45,47 +45,47 @@ api.interceptors.response.use(
 
 export const AuthAPI = {
   login: (codigoAcceso: string) =>
-    api.post('/app/auth/login', { codigo_acceso: codigoAcceso }),
+    api.post('/api/app/auth/login', { codigo_acceso: codigoAcceso }),
 }
 
 // ── Perfil Endpoints ───────────────────────────────────────────────────
 
 export const PerfilAPI = {
-  obtener: () => api.get('/app/perfil'),
+  obtener: () => api.get('/api/app/perfil'),
 }
 
 // ── Asignaciones Endpoints ─────────────────────────────────────────────
 
 export const AsignacionesAPI = {
   listar: (soloActivas = true) =>
-    api.get(`/app/asignaciones?activas=${soloActivas}`),
+    api.get(`/api/app/asignaciones?activas=${soloActivas}`),
   
   completar: (id: number) =>
-    api.post(`/app/asignaciones/${id}/completar`),
+    api.post(`/api/app/asignaciones/${id}/completar`),
 }
 
 // ── Beneficiarios Endpoints ────────────────────────────────────────────
 
 export const BeneficiariosAPI = {
   listar: (search?: string) => 
-    api.get(search ? `/app/beneficiarios?search=${search}` : '/app/beneficiarios'),
+    api.get(search ? `/api/app/beneficiarios?search=${search}` : '/api/app/beneficiarios'),
   
-  crear: (datos: any) => api.post('/app/beneficiarios', datos),
+  crear: (datos: any) => api.post('/api/app/beneficiarios', datos),
 }
 
 // ── Bitácoras Endpoints ─────────────────────────────────────────────────
 
 export const BitacorasAPI = {
-  crear: (datos: any) => api.post('/app/bitacoras', datos),
+  crear: (datos: any) => api.post('/api/app/bitacoras', datos),
   
-  listar: () => api.get('/app/bitacoras'),
+  listar: () => api.get('/api/app/bitacoras'),
 }
 
 // ── Evidencias Endpoints ────────────────────────────────────────────────
 
 export const EvidenciasAPI = {
   subir: (formData: FormData) =>
-    api.post('/app/evidencias', formData, {
+    api.post('/api/app/evidencias', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 }
@@ -94,12 +94,12 @@ export const EvidenciasAPI = {
 
 export const SyncAPI = {
   bitacoras: (registros: any[]) =>
-    api.post('/sync/bitacoras', { registros }),
+    api.post('/api/sync/bitacoras', { registros }),
   
   beneficiarios: (registros: any[]) =>
-    api.post('/sync/beneficiarios', { registros }),
+    api.post('/api/sync/beneficiarios', { registros }),
   
-  estado: () => api.get('/sync/estado'),
+  estado: () => api.get('/api/sync/estado'),
 }
 
 export default api
