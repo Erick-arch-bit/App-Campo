@@ -1,8 +1,8 @@
-import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import config from './config'
 
 // Importar rutas
 import authRoutes from './routes/auth'
@@ -14,22 +14,21 @@ import evidenciasRoutes from './routes/evidencias'
 import syncRoutes from './routes/sync'
 
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT = config.port
 
 // Middleware de seguridad
 app.use(helmet())
 
 // Configuración de CORS
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000']
 app.use(cors({
-  origin: allowedOrigins,
+  origin: config.allowedOrigins,
   credentials: true,
 }))
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // límite de 100 peticiones por IP
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
   message: {
     error: 'Demasiadas peticiones',
     message: 'Por favor, intenta de nuevo más tarde',
@@ -100,7 +99,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   console.error('Error no manejado:', err)
   res.status(500).json({
     error: 'Error interno del servidor',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Algo salió mal',
+    message: config.nodeEnv === 'development' ? err.message : 'Algo salió mal',
   })
 })
 

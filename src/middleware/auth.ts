@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
+import config from '../config'
 
-const JWT_SECRET = process.env.JWT_SECRET_APP || ''
+const JWT_SECRET = config.jwt.secret
 
 export interface AuthRequest extends Request {
   usuario?: {
@@ -82,5 +83,5 @@ export const generarToken = (payload: {
   puede_registrar_beneficiarios: boolean
   zona_nombre: string | null
 }): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' as const })
 }

@@ -1,13 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
-
-// Variables de entorno
-const supabaseUrl = process.env.SUPABASE_URL || 'https://gvuzyszsflujzinykqom.supabase.co'
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || ''
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+import config from '../config'
 
 // Cliente público (para operaciones desde el cliente)
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase: SupabaseClient = createClient(config.supabase.url, config.supabase.anonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -15,7 +11,7 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
 })
 
 // Cliente con rol de servicio (para operaciones del servidor)
-export const supabaseAdmin: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+export const supabaseAdmin: SupabaseClient = createClient(config.supabase.url, config.supabase.serviceRoleKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,

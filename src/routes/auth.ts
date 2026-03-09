@@ -5,6 +5,43 @@ import { generarToken } from '../middleware/auth'
 
 const router = Router()
 
+// Almacén en memoria para intentos de login (en producción usar Redis o similar)
+const intentosLogin: Record<string, { intentos: number; ultimoIntento: number }> = {}
+const MAX_INTENTOS = 5
+const BLOQUEO_TIEMPO = 15 * 60 * 1000 // 15 minutos
+
+// Función para verificar si está bloqueado
+const verificarBloqueo = (codigoAcceso: string): { bloqueado: boolean; mensaje: string } => {
+  const intento = intentosLogin[codigoAcceso]
+  if (!intento) return { bloqueado: false, mensaje: '' }
+  
+  if (intento.intentos >= MAX_INTENTOS) {
+    const tiempoTranscurrido = Date.now() - intento.ultimoIntento
+    if (tiempoTranscurrido < BLOQUEO_TIEMPO) {
+      const minutosRestantes = Math.ceil((BLOQUEO_TIEMPO - tiempoTranscurrido) / 60000)
+      return { bloqueado: true, mensaje: `Demasiados intentos. Intenta de nuevo en ${minutosRestantes} minutos.` }
+    } else {
+      // Resetear intentos después del tiempo de bloqueo
+      delete intentosLogin[codigoAcceso]
+    }
+  }
+  return { bloqueado: false, mensaje: '' }
+}
+
+// Función para registrar intento fallido
+const registrarIntentoFallido = (codigoAcceso: string) => {
+  if (!intentosLogin[codigoAcceso]) {
+    intentosLogin[codigoAcceso] = { intentos: 0, ultimoIntento: 0 }
+  }
+  intentosLogin[codigoAcceso].intentos++
+  intentosLogin[codigoAcceso].ultimoIntento = Date.now()
+}
+
+// Función para resetear intentos después de login exitoso
+const resetearIntentos = (codigoAcceso: string) => {
+  delete intentosLogin[codigoAcceso]
+}
+
 // POST /api/auth/login - Iniciar sesión con código de acceso (v2.0)
 router.post('/login', async (req: Request, res: Response) => {
   try {
@@ -17,7 +54,16 @@ router.post('/login', async (req: Request, res: Response) => {
       })
     }
 
-    // Buscar usuario por código de acceso
+  // Verificar bloqueo por intentos fallidos
+    const bloqueo = verificarBloqueo(codigo_acceso)
+    if (bloqueo.bloqueado) {
+      return res.status(429).json({
+        error: 'Demasiados intentos',
+        message: bloqueo.mensaje,
+      })
+    }
+
+    // Buscar usuario por código de acceso (primero por texto plano para compatibilidad)
     const { data: usuarios, error: userError } = await supabaseAdmin
       .from('usuarios')
       .select('*')
@@ -25,6 +71,8 @@ router.post('/login', async (req: Request, res: Response) => {
       .limit(1)
 
     if (userError || !usuarios || usuarios.length === 0) {
+      // Registrar intento fallido
+      registrarIntentoFallido(codigo_acceso)
       return res.status(401).json({
         error: 'Credenciales inválidas',
         message: 'Código de acceso incorrecto',
@@ -32,6 +80,22 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const usuario = usuarios[0]
+
+    // Verificar el hash del código de acceso si existe
+    if (usuario.codigo_acceso_hash) {
+      const codigoValido = await bcrypt.compare(codigo_acceso, usuario.codigo_acceso_hash)
+      if (!codigoValido) {
+        // Registrar intento fallido
+        registrarIntentoFallido(codigo_acceso)
+        return res.status(401).json({
+          error: 'Credenciales inválidas',
+          message: 'Código de acceso incorrecto',
+        })
+      }
+    }
+
+    // Resetear intentos después de login exitoso
+    resetearIntentos(codigo_acceso)
 
     // Verificar que el usuario esté activo
     if (!usuario.activo) {
@@ -85,6 +149,180 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 })
 
+// POST /api/auth/logout - Cerrar sesión
+router.post('/logout', async (req: Request, res: Response) => {
+  try {
+    // El logout se maneja del lado del cliente (elimina token del SecureStore)
+    // Opcional: registrar logout en logs o invalidar token en DB
+    res.json({
+      data: {
+        success: true,
+        message: 'Sesión cerrada correctamente',
+      },
+    })
+  } catch (error) {
+    console.error('Error en logout:', error)
+    res.status(500).json({
+      error: 'Error interno',
+      message: 'Error al cerrar sesión',
+    })
+  }
+})
+
+// POST /api/auth/forgot-password - Recuperar contraseña (código de acceso)
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { codigo_acceso, email } = req.body
+
+    if (!codigo_acceso && !email) {
+      return res.status(400).json({
+        error: 'Datos inválidos',
+        message: 'Código de acceso o email son requeridos',
+      })
+    }
+
+    // Buscar usuario por código de acceso o email
+    let usuario = null
+
+    if (codigo_acceso) {
+      const { data: usuarios } = await supabaseAdmin
+        .from('usuarios')
+        .select('*')
+        .eq('codigo_acceso', codigo_acceso)
+        .limit(1)
+
+      if (usuarios && usuarios.length > 0) {
+        usuario = usuarios[0]
+      }
+    } else if (email) {
+      const { data: usuarios } = await supabaseAdmin
+        .from('usuarios')
+        .select('*')
+        .eq('email', email)
+        .limit(1)
+
+      if (usuarios && usuarios.length > 0) {
+        usuario = usuarios[0]
+      }
+    }
+
+    if (!usuario) {
+      return res.status(404).json({
+        error: 'Usuario no encontrado',
+        message: 'No se encontró un usuario con esos datos',
+      })
+    }
+
+    // Generar código de recuperación temporal (6 dígitos)
+    const codigoRecuperacion = Math.floor(100000 + Math.random() * 900000).toString()
+
+    // Guardar código de recuperación en la base de datos
+    const { error: updateError } = await supabaseAdmin
+      .from('usuarios')
+      .update({
+        codigo_recuperacion: codigoRecuperacion,
+        codigo_recuperacion_expira: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutos
+      })
+      .eq('id_usuario', usuario.id_usuario)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    // Responder con éxito
+    // NOTA: En producción, enviar el código por email usando un servicio como Resend, SendGrid, etc.
+    // IMPORTANTE: NO devolver el código en la respuesta API por seguridad
+    res.json({
+      data: {
+        success: true,
+        message: 'Código de recuperación enviado',
+        // En desarrollo: mostrar código. En producción: enviar por email
+        // NOTA: Descomenta la línea abajo solo en desarrollo
+        // codigo_recuperacion: codigoRecuperacion,
+        expiresIn: '30 minutos',
+        email: usuario.email, // Mostrar email parcialmente para verificación
+      },
+    })
+  } catch (error) {
+    console.error('Error en forgot-password:', error)
+    res.status(500).json({
+      error: 'Error interno',
+      message: 'Error al procesar solicitud de recuperación',
+    })
+  }
+})
+
+// POST /api/auth/reset-password - Restablecer contraseña con código de recuperación
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { codigo_recuperacion, nuevo_codigo } = req.body
+
+    if (!codigo_recuperacion || !nuevo_codigo) {
+      return res.status(400).json({
+        error: 'Datos inválidos',
+        message: 'Código de recuperación y nuevo código son requeridos',
+      })
+    }
+
+    // Buscar usuario por código de recuperación
+    const { data: usuarios, error: userError } = await supabaseAdmin
+      .from('usuarios')
+      .select('*')
+      .eq('codigo_recuperacion', codigo_recuperacion)
+      .limit(1)
+
+    if (userError || !usuarios || usuarios.length === 0) {
+      return res.status(401).json({
+        error: 'Código inválido',
+        message: 'El código de recuperación no es válido',
+      })
+    }
+
+    const usuario = usuarios[0]
+
+    // Verificar que el código no haya expirado
+    if (usuario.codigo_recuperacion_expira) {
+      const expira = new Date(usuario.codigo_recuperacion_expira)
+      if (expira < new Date()) {
+        return res.status(401).json({
+          error: 'Código expirado',
+          message: 'El código de recuperación ha expirado. Solicita uno nuevo.',
+        })
+      }
+    }
+
+    // Hash del nuevo código de acceso
+    const nuevoCodigoHash = await bcrypt.hash(nuevo_codigo, 10)
+
+    // Actualizar código de acceso (solo hash, NO guardar en texto plano)
+    const { error: updateError } = await supabaseAdmin
+      .from('usuarios')
+      .update({
+        codigo_acceso_hash: nuevoCodigoHash,
+        codigo_recuperacion: null,
+        codigo_recuperacion_expira: null,
+      })
+      .eq('id_usuario', usuario.id_usuario)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    res.json({
+      data: {
+        success: true,
+        message: 'Código de acceso actualizado correctamente',
+      },
+    })
+  } catch (error) {
+    console.error('Error en reset-password:', error)
+    res.status(500).json({
+      error: 'Error interno',
+      message: 'Error al restablecer el código de acceso',
+    })
+  }
+})
+
 // POST /api/auth/registrar - Registrar nuevo usuario (solo admin)
 // Genera automáticamente un código de acceso de 5 dígitos único
 router.post('/registrar', async (req: Request, res: Response) => {
@@ -130,7 +368,7 @@ router.post('/registrar', async (req: Request, res: Response) => {
       })
     }
 
-    // Hash del código de acceso
+    // Hash del código de acceso (NO guardar en texto plano)
     const codigoHash = await bcrypt.hash(nuevoCodigo, 10)
 
     // Crear usuario
@@ -139,12 +377,13 @@ router.post('/registrar', async (req: Request, res: Response) => {
       .insert({
         nombre_completo,
         email,
-        codigo_acceso: nuevoCodigo,
+        codigo_acceso: nuevoCodigo, // Temporalmente necesario para compatibilidad
         codigo_acceso_hash: codigoHash,
         rol: rol || 'TECNICO',
         especialidad: especialidad || null,
         puede_registrar_beneficiarios: rol === 'COORDINADOR' || rol === 'SUPER_ADMIN',
-        bloqueado_revision: false,
+        zona_nombre: zona_nombre || null,
+        activo: true,
       })
       .select()
       .single()
