@@ -22,7 +22,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.erick_2303.CampoApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,6 +32,13 @@
       "expo-router",
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "934215ae-87cb-427c-bfe4-e466fea6d4cb"
+      }
+    },
+    "owner": "erick_2303"
   }
 }

@@ -18,7 +18,7 @@ router.get('/', autenticar, async (req: AuthRequest, res: Response) => {
 
     const { data: usuario, error } = await supabaseAdmin
       .from('usuarios')
-      .select('id_usuario, nombre_completo, email, rol, especialidad, puede_registrar_beneficiarios, bloqueado_revision, zona_nombre')
+      .select('id_usuario, nombre_completo, email, rol, especialidad, puede_registrar_beneficiarios, bloqueado_revision, zona_nombre, foto_perfil_url')
       .eq('id_usuario', id_usuario)
       .single()
 
@@ -30,7 +30,17 @@ router.get('/', autenticar, async (req: AuthRequest, res: Response) => {
     }
 
     res.json({
-      data: usuario,
+      success: true,
+      data: {
+        id_usuario: usuario.id_usuario,
+        nombre_completo: usuario.nombre_completo,
+        email: usuario.email,
+        rol: usuario.rol,
+        especialidad: usuario.especialidad,
+        foto_perfil_url: usuario.foto_perfil_url,
+        puede_registrar_beneficiarios: usuario.puede_registrar_beneficiarios,
+        zona: usuario.zona_nombre,
+      },
     })
   } catch (error) {
     console.error('Error obteniendo perfil:', error)

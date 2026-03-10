@@ -52,8 +52,13 @@ export const usePreload = create<PreloadStore>((set, get) => ({
         BeneficiariosAPI.listar(),
       ])
 
-      const asignaciones  = asignacionesRes.data.data.asignaciones || []
-      const beneficiarios = beneficiariosRes.data.data.beneficiarios || []
+      // La API devuelve: { success: true, data: [...] } }
+      // También soporta formato legacy: { success: true, data: { asignaciones: [...] } }
+      const rawData = asignacionesRes.data.data
+      const asignaciones = Array.isArray(rawData) 
+        ? rawData 
+        : rawData?.asignaciones || asignacionesRes.data?.asignaciones || []
+      const beneficiarios = beneficiariosRes.data.data?.beneficiarios || beneficiariosRes.data?.beneficiarios || []
       const ahora = new Date()
 
       // Guardar en cache
@@ -83,8 +88,8 @@ export const usePreload = create<PreloadStore>((set, get) => ({
       // Obtener asignaciones anteriores del estado
       const asignacionesAnteriores = get().asignaciones
 
-      const { data } = await AsignacionesAPI.listar(true)
-      const asignaciones = data.data.asignaciones || []
+      const response = await AsignacionesAPI.listar(true)
+      const asignaciones = response.data.data?.asignaciones || response.data?.asignaciones || []
 
       // Detectar nuevas asignaciones
       if (asignacionesAnteriores.length > 0) {
@@ -105,8 +110,8 @@ export const usePreload = create<PreloadStore>((set, get) => ({
 
   actualizarBeneficiarios: async () => {
     try {
-      const { data } = await BeneficiariosAPI.listar()
-      const beneficiarios = data.data.beneficiarios || []
+      const response = await BeneficiariosAPI.listar()
+      const beneficiarios = response.data.data?.beneficiarios || response.data?.beneficiarios || []
 
       await AsyncStorage.setItem(CACHE_KEY_BENEFICIARIOS, JSON.stringify(beneficiarios))
       await AsyncStorage.setItem(CACHE_KEY_TIMESTAMP, new Date().toISOString())

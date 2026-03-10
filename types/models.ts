@@ -16,19 +16,31 @@ export interface Usuario {
 
 // ── Asignaciones ──────────────────────────────────────────────────────
 export interface Asignacion {
-  id_asignacion:          number
-  tipo_asignacion:        'BENEFICIARIO' | 'ACTIVIDAD'
-  descripcion_actividad:  string | null
-  fecha_limite:           string
-  completado:             boolean
-  beneficiario_nombre:    string | null
-  beneficiario_municipio: string | null
+  id_asignacion:    number
+  tipo_asignacion:  'BENEFICIARIO' | 'ACTIVIDAD'
+  descripcion_actividad: string | null
+  fecha_limite:     string
+  completado:       boolean
+  // Objeto beneficiario anidado (formato nuevo del backend)
+  beneficiario?: {
+    nombre_completo?: string | null
+    municipio?:       string | null
+    localidad?:      string | null
+    folio?:          string | null
+    telefono?:       string | null
+    latitud?:        string | null
+    longitud?:       string | null
+    cadena_productiva?: string | null
+  }
+  // Campos planos (formato legacy)
+  beneficiario_nombre?:    string | null
+  beneficiario_municipio?: string | null
   beneficiario_localidad?: string | null
-  beneficiario_folio:     string | null
+  beneficiario_folio?:     string | null
   beneficiario_telefono?: string | null
   beneficiario_lat?:      string | null
-  beneficiario_lng?:      string | null
-  cadena_productiva:      string | null
+  beneficiario_lng?:     string | null
+  cadena_productiva?:      string | null
 }
 
 // ── Beneficiarios ─────────────────────────────────────────────────────

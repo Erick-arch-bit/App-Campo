@@ -1,12 +1,8 @@
 import { Tabs } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Colors } from '@/constants/Colors'
-import { useAuth } from '@/hooks/useAuth'
 
 export default function TabsLayout() {
-  const { usuario } = useAuth()
-  const puedeRegistrar = usuario?.puede_registrar_beneficiarios ?? false
-
   return (
     <Tabs
       screenOptions={{
@@ -34,18 +30,18 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {puedeRegistrar && (
-        <Tabs.Screen
-          name="alta-beneficiario"
-          options={{
-            title: 'Alta Beneficiario',
-            tabBarLabel: 'Alta',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person-add" size={size} color={color} />
-            ),
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="alta-beneficiario"
+        options={{
+          title: 'Alta Beneficiario',
+          tabBarLabel: 'Alta',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-add" size={size} color={color} />
+          ),
+          // Ocultar tab si no tiene permiso (se maneja en el componente)
+          tabBarStyle: { display: 'none' },
+        }}
+      />
       <Tabs.Screen
         name="informacion"
         options={{

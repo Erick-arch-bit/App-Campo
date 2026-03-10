@@ -7,6 +7,8 @@ interface Usuario {
   nombre_completo: string
   email: string
   rol: string
+  especialidad?: string
+  puede_registrar_beneficiarios?: boolean
 }
 
 interface AuthStore {

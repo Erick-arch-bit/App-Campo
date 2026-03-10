@@ -41,7 +41,7 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // Rutas de la API
-app.use('/api/auth', authRoutes)
+app.use('/api/app/auth', authRoutes)
 app.use('/api/app/perfil', perfilRoutes)
 app.use('/api/app/asignaciones', asignacionesRoutes)
 app.use('/api/app/beneficiarios', beneficiariosRoutes)
@@ -63,8 +63,9 @@ app.get('/api/health', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     name: 'CampoApp API',
-    version: '1.0.0',
+    version: '2.0.0',
     description: 'API para la aplicación móvil de SADERH Campo Hidalgo',
+    baseUrl: '/api/app',
     endpoints: {
       auth: {
         login: 'POST /api/auth/login',
@@ -72,10 +73,13 @@ app.get('/api', (req, res) => {
       },
       app: {
         perfil: 'GET /api/app/perfil',
-        asignaciones: 'GET /api/app/asignaciones',
-        beneficiaries: 'GET /api/app/beneficiarios',
-        bitacoras: 'GET /api/app/bitacoras',
-        evidencias: 'POST /api/app/evidencias',
+        asignaciones: 'GET /api/app/asignaciones?activas=true',
+        completarAsignacion: 'POST /api/app/asignaciones/:id/completar',
+        beneficiaries: 'GET /api/app/beneficiarios?search=texto',
+        crearBeneficiario: 'POST /api/app/beneficiarios',
+        bitacoras: 'GET /api/app/bitacoras?limit=50&offset=0',
+        crearBitacora: 'POST /api/app/bitacoras',
+        crearEvidencia: 'POST /api/app/evidencias',
       },
       sync: {
         bitacoras: 'POST /api/sync/bitacoras',

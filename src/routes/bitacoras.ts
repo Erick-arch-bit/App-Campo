@@ -4,10 +4,18 @@ import { supabaseAdmin } from '../db/supabase'
 
 const router = Router()
 
+// Helper para normalizar query params de Express
+const getQueryString = (param: string | string[] | undefined): string | undefined => {
+  if (!param) return undefined
+  return Array.isArray(param) ? param[0] : param
+}
+
 // GET /api/app/bitacoras - Obtener historial de bitácoras
 router.get('/', autenticar, async (req: AuthRequest, res: Response) => {
   try {
     const id_usuario = req.usuario?.id_usuario
+    const limit = parseInt(getQueryString(req.query.limit as string | string[] | undefined) || '50')
+    const offset = parseInt(getQueryString(req.query.offset as string | string[] | undefined) || '0')
 
     if (!id_usuario) {
       return res.status(401).json({
@@ -26,23 +34,49 @@ router.get('/', autenticar, async (req: AuthRequest, res: Response) => {
         fecha_hora_fin,
         latitud,
         longitud,
+        latitud_fin,
+        longitud_fin,
+        precision_gps,
         tipo_bitacora,
         reporte,
         calificacion,
+        firma_url,
+        foto_confirmacion,
         sincronizado,
         created_at
       `)
       .eq('id_usuario', id_usuario)
       .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
 
     if (error) {
       throw error
     }
 
+    // Transformar datos para el formato requerido por la app
+    const bitacorasTransformadas = bitacoras?.map((b: any) => ({
+      id_bitacora: b.id_bitacora,
+      uuid_movil: b.uuid_movil,
+      id_asignacion: b.id_asignacion,
+      fecha_hora_inicio: b.fecha_hora_inicio,
+      fecha_hora_fin: b.fecha_hora_fin,
+      latitud: b.latitud?.toString(),
+      longitud: b.longitud?.toString(),
+      precision_gps: b.precision_gps?.toString(),
+      latitud_fin: b.latitud_fin?.toString(),
+      longitud_fin: b.longitud_fin?.toString(),
+      tipo_bitacora: b.tipo_bitacora,
+      calificacion: b.calificacion,
+      reporte: b.reporte,
+      firma_url: b.firma_url,
+      foto_confirmacion_url: b.foto_confirmacion,
+      estatus_sincronizacion: b.sincronizado ? 'RECIBIDO' : 'PENDIENTE',
+      fecha_registro_servidor: b.created_at,
+    })) || []
+
     res.json({
-      data: {
-        bitacoras: bitacoras || [],
-      },
+      success: true,
+      data: bitacorasTransformadas,
     })
   } catch (error) {
     console.error('Error obteniendo bitácoras:', error)
@@ -81,7 +115,7 @@ router.post('/', autenticar, async (req: AuthRequest, res: Response) => {
       reporte,
       calificacion,
       firma_url,
-      foto_confirmacion,
+      foto_confirmacion_url,
     } = req.body
 
     if (!fecha_hora_inicio || !fecha_hora_fin || !tipo_bitacora) {
@@ -110,10 +144,10 @@ router.post('/', autenticar, async (req: AuthRequest, res: Response) => {
         reporte: reporte || null,
         calificacion: calificacion || null,
         firma_url: firma_url || null,
-        foto_confirmacion: foto_confirmacion || null,
+        foto_confirmacion: foto_confirmacion_url || null,
         sincronizado: true,
       })
-      .select('id_bitacora')
+      .select('id_bitacora, uuid_movil')
       .single()
 
     if (error) {
@@ -124,13 +158,19 @@ router.post('/', autenticar, async (req: AuthRequest, res: Response) => {
     if (id_asignacion) {
       await supabaseAdmin
         .from('asignaciones')
-        .update({ completado: true })
+        .update({ 
+          completado: true,
+          fecha_completado: new Date().toISOString()
+        })
         .eq('id_asignacion', id_asignacion)
     }
 
     res.status(201).json({
+      success: true,
+      message: 'Bitácora creada',
       data: {
         id_bitacora: bitacora.id_bitacora,
+        uuid_movil: bitacora.uuid_movil,
       },
     })
   } catch (error) {

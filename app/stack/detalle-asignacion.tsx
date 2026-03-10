@@ -20,13 +20,16 @@ export default function DetalleAsignacionScreen() {
 
   // Falla 3 + 9: Obtener la asignación desde el store en lugar de parsear JSON de params
   const item: Asignacion | null = (() => {
+    // Normalizar params.id a string (puede ser string | string[])
+    const idParam = Array.isArray(params.id) ? params.id[0] : params.id
+    
     // Primero intentar obtener del estado temporal del store
     const seleccionada = usePreload.getState()._asignacionSeleccionada as Asignacion | undefined
-    if (seleccionada && String(seleccionada.id_asignacion) === params.id) {
+    if (seleccionada && String(seleccionada.id_asignacion) === idParam) {
       return seleccionada
     }
     // Fallback: buscar en la lista de asignaciones por ID
-    const id = Number(params.id)
+    const id = Number(idParam)
     if (!isNaN(id)) {
       return asignaciones.find(a => a.id_asignacion === id) ?? null
     }
@@ -34,9 +37,17 @@ export default function DetalleAsignacionScreen() {
   })()
 
   const esBeneficiario = item?.tipo_asignacion === 'BENEFICIARIO'
-  // Coordenadas del predio (si las tiene) o del técnico
-  const latPredio = item?.beneficiario_lat  ? parseFloat(item.beneficiario_lat)  : null
-  const lngPredio = item?.beneficiario_lng  ? parseFloat(item.beneficiario_lng)  : null
+  // Coordenadas del predio - usar objeto anidado o campos planos (legacy)
+  const latPredio = item?.beneficiario?.latitud 
+    ? parseFloat(item.beneficiario.latitud) 
+    : item?.beneficiario_lat 
+      ? parseFloat(item.beneficiario_lat) 
+      : null
+  const lngPredio = item?.beneficiario?.longitud 
+    ? parseFloat(item.beneficiario.longitud) 
+    : item?.beneficiario_lng 
+      ? parseFloat(item.beneficiario_lng) 
+      : null
 
   useEffect(() => {
     (async () => {

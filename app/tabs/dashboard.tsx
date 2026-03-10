@@ -35,8 +35,13 @@ export default function DashboardScreen() {
       }
 
       // Luego actualizar desde el servidor
-      const { data } = await AsignacionesAPI.listar(true)
-      setAsignaciones(data.data.asignaciones)
+      const response = await AsignacionesAPI.listar(true)
+      // La API devuelve: { success: true, data: [...] }
+      const rawData = response.data.data
+      const asignacionesData = Array.isArray(rawData) 
+        ? rawData 
+        : rawData?.asignaciones || response.data.asignaciones || []
+      setAsignaciones(asignacionesData)
       setUsandoCache(false)
     } catch (e) {
       console.error(e)
@@ -57,10 +62,12 @@ export default function DashboardScreen() {
     cargar()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Filtrar por especialidad del técnico
-  const asignacionesFiltradas = asignaciones.filter(a => {
-    if (especialidad === 'AGRICOLA')      return a.cadena_productiva === 'AGRICOLA'
-    if (especialidad === 'AGROPECUARIO')  return a.cadena_productiva === 'AGROPECUARIO'
+  // Filtrar por especialidad del técnico (soporta formato anidado y plano)
+  const asignacionesFiltradas = (asignaciones || []).filter(a => {
+    // Soporta tanto objeto anidado como campo plano
+    const cadena = a.beneficiario?.cadena_productiva ?? a.cadena_productiva
+    if (especialidad === 'AGRICOLA')      return cadena === 'AGRICOLA'
+    if (especialidad === 'AGROPECUARIO')  return cadena === 'AGROPECUARIO'
     return true // ACTIVIDAD_GENERAL ve todo
   })
 

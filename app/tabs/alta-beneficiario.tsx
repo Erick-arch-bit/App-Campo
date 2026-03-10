@@ -24,8 +24,14 @@ export default function AltaBeneficiarioScreen() {
 
     setGuardando(true)
     try {
+      // Construir nombre completo y mapear campos al formato esperado por el backend
+      const nombreCompleto = `${nombre} ${paterno} ${materno || ''}`.trim()
+      
       await BeneficiariosAPI.crear({
-        nombre, paterno, materno, telefono, municipio, localidad,
+        nombre_completo: nombreCompleto,
+        telefono_contacto: telefono,
+        municipio,
+        localidad,
       })
       Alert.alert(
         '✅ Beneficiario registrado',

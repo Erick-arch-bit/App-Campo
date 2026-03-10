@@ -74,8 +74,7 @@ router.post('/login', async (req: Request, res: Response) => {
       // Registrar intento fallido
       registrarIntentoFallido(codigo_acceso)
       return res.status(401).json({
-        error: 'Credenciales inválidas',
-        message: 'Código de acceso incorrecto',
+        error: 'Código de acceso inválido',
       })
     }
 
@@ -88,8 +87,7 @@ router.post('/login', async (req: Request, res: Response) => {
         // Registrar intento fallido
         registrarIntentoFallido(codigo_acceso)
         return res.status(401).json({
-          error: 'Credenciales inválidas',
-          message: 'Código de acceso incorrecto',
+          error: 'Código de acceso inválido',
         })
       }
     }
@@ -122,22 +120,20 @@ router.post('/login', async (req: Request, res: Response) => {
       .update({ ultimo_acceso: new Date().toISOString() })
       .eq('id_usuario', usuario.id_usuario)
 
-    // Responder con token y datos del usuario
+    // Responder con token y datos del usuario (formato spec)
     res.json({
-      data: {
-        token,
-        user: {
-          id_usuario: usuario.id_usuario,
-          nombre_completo: usuario.nombre_completo,
-          email: usuario.email,
-          codigo_acceso: usuario.codigo_acceso,
-          rol: usuario.rol,
-          especialidad: usuario.especialidad,
-          puede_registrar_beneficiarios: usuario.puede_registrar_beneficiarios,
-          bloqueado_revision: usuario.bloqueado_revision,
-          zona_nombre: usuario.zona_nombre,
-          foto_perfil_url: usuario.foto_perfil_url,
-        },
+      success: true,
+      rol: usuario.rol,
+      token,
+      user: {
+        id_usuario: usuario.id_usuario,
+        nombre_completo: usuario.nombre_completo,
+        email: usuario.email,
+        rol: usuario.rol,
+        especialidad: usuario.especialidad,
+        puede_registrar_beneficiarios: usuario.puede_registrar_beneficiarios,
+        zona_nombre: usuario.zona_nombre,
+        foto_perfil_url: usuario.foto_perfil_url,
       },
     })
   } catch (error) {
